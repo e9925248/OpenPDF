@@ -307,6 +307,54 @@ public class PDFXPrepare {
 						* (offsetX + origPageSize.getLeft()), scale
 						* (offsetY + origPageSize.getBottom()));
 			write.setPageEmpty(false);
+			content.saveState();
+			content.setLineWidth(0.25f);
+			content.resetCMYKColorStroke();
+
+			if (Math.abs(paperSize.getLeft() - cropSize.getLeft()) > 1) {
+				content.moveTo(paperSize.getLeft(), cropSize.getBottom());
+				content.lineTo((paperSize.getLeft() + cropSize.getLeft()) / 2,
+						cropSize.getBottom());
+				content.stroke();
+				content.moveTo(paperSize.getLeft(), cropSize.getTop());
+				content.lineTo((paperSize.getLeft() + cropSize.getLeft()) / 2,
+						cropSize.getTop());
+				content.stroke();
+			}
+			if (Math.abs(paperSize.getRight() - cropSize.getRight()) > 1) {
+				content.moveTo(paperSize.getRight(), cropSize.getBottom());
+				content.lineTo(
+						(paperSize.getRight() + cropSize.getRight()) / 2,
+						cropSize.getBottom());
+				content.stroke();
+				content.moveTo(paperSize.getRight(), cropSize.getTop());
+				content.lineTo(
+						(paperSize.getRight() + cropSize.getRight()) / 2,
+						cropSize.getTop());
+				content.stroke();
+			}
+			if (Math.abs(paperSize.getTop() - cropSize.getTop()) > 1) {
+				content.moveTo(cropSize.getLeft(), paperSize.getTop());
+				content.lineTo(cropSize.getLeft(),
+						(paperSize.getTop() + cropSize.getTop()) / 2);
+				content.stroke();
+				content.moveTo(cropSize.getRight(), paperSize.getTop());
+				content.lineTo(cropSize.getRight(),
+						(paperSize.getTop() + cropSize.getTop()) / 2);
+				content.stroke();
+			}
+			if (Math.abs(paperSize.getBottom() - cropSize.getBottom()) > 1) {
+				content.moveTo(cropSize.getLeft(), paperSize.getBottom());
+				content.lineTo(cropSize.getLeft(),
+						(paperSize.getBottom() + cropSize.getBottom()) / 2);
+				content.stroke();
+				content.moveTo(cropSize.getRight(), paperSize.getBottom());
+				content.lineTo(cropSize.getRight(),
+						(paperSize.getBottom() + cropSize.getBottom()) / 2);
+				content.stroke();
+			}
+
+			content.restoreState();
 		}
 		write.freeReader(read);
 		write.setOutlines(bookmarks);
