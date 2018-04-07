@@ -93,13 +93,15 @@ public class PDFXPrepare {
 		}
 		if ("PDFX3".equals(args[2]))
 			PDFType = PdfWriter.PDFX32002;
+		else if ("PDFX1A".equals(args[2]))
+			PDFType = PdfWriter.PDFX1A2001;
 		else
 			throw new IllegalArgumentException("Invalid PDF type " + args[2]);
 	}
 
 	void usage() {
 		System.out
-				.println("Usage: input-pdf output-pdf PDFX3 page-size [bleed]");
+				.println("Usage: input-pdf output-pdf PDFX1A|PDFX3 page-size [bleed]");
 		System.out
 				.println("Converts the PDF for printing. It adds bleed and scales the document.");
 		throw new IllegalArgumentException("Incorrect parameters");
