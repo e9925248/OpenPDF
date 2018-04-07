@@ -3891,6 +3891,10 @@ public class PdfReader implements PdfViewerPreferences {
     return p.intValue();
   }
 
+  public void enableFullAccess() {
+    ownerPasswordUsed = true;
+  }
+ 
   /**
    * Checks if the document was opened with the owner password so that the end
    * application can decide what level of access restrictions to apply. If the

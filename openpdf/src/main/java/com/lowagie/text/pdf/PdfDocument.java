@@ -2263,9 +2263,9 @@ public class PdfDocument extends Document {
 
     void setBoxSize(String boxName, Rectangle size) {
         if (size == null)
-            boxSize.remove(boxName);
+            thisBoxSize.remove(boxName);
         else
-            boxSize.put(boxName, new PdfRectangle(size));
+            thisBoxSize.put(boxName, new PdfRectangle(size));
     }
 
     protected void setNewPageSizeAndMargins() {
