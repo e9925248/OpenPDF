@@ -47,6 +47,8 @@
 
 package com.lowagie.tools;
 
+import java.awt.color.ICC_Profile;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -73,23 +75,25 @@ public class PDFXPrepare {
 	int PDFType;
 	FileInputStream input;
 	FileOutputStream output;
+	ICC_Profile icc;
+	String iccName;
 
 	PDFXPrepare(String[] args) throws IOException {
-		if (args.length != 5 && args.length != 4)
+		if (args.length != 6 && args.length != 5)
 			usage();
 
-		pageSize = parsePaperSize(args[3]);
-		bleed = parseBleed(args.length == 4 ? null : args[4]);
+		pageSize = parsePaperSize(args[4]);
+		bleed = parseBleed(args.length == 5 ? null : args[5]);
 
 		try {
 			input = new FileInputStream(args[0]);
 		} catch (IOException e) {
-			throw new IOException("Failed to open input file " + args[0]);
+			throw new IOException("Failed to open input file " + args[0], e);
 		}
 		try {
 			output = new FileOutputStream(args[1]);
 		} catch (IOException e) {
-			throw new IOException("Failed to open output file " + args[1]);
+			throw new IOException("Failed to open output file " + args[1], e);
 		}
 		if ("PDFX3".equals(args[2]))
 			PDFType = PdfWriter.PDFX32002;
@@ -97,11 +101,19 @@ public class PDFXPrepare {
 			PDFType = PdfWriter.PDFX1A2001;
 		else
 			throw new IllegalArgumentException("Invalid PDF type " + args[2]);
+		try {
+			File f = new File(args[3]);
+			iccName = f.getName();
+			FileInputStream is = new FileInputStream(f);
+			icc = ICC_Profile.getInstance(is);
+		} catch (IOException e) {
+			throw new IOException("Failed to open icc profile " + args[3], e);
+		}
 	}
 
 	void usage() {
 		System.out
-				.println("Usage: input-pdf output-pdf PDFX1A|PDFX3 page-size [bleed]");
+				.println("Usage: input-pdf output-pdf PDFX1A|PDFX3 icc-profile page-size [bleed]");
 		System.out
 				.println("Converts the PDF for printing. It adds bleed and scales the document.");
 		throw new IllegalArgumentException("Incorrect parameters");
@@ -245,6 +257,7 @@ public class PDFXPrepare {
 		write.setPDFXConformance(PDFType);
 		List bookmarks = new ArrayList();
 		doc.open();
+		write.setOutputIntents("Custom", null, null, iccName, icc);
 
 		List inputBookmarks = SimpleBookmark.getBookmark(read);
 		if (inputBookmarks != null) {
