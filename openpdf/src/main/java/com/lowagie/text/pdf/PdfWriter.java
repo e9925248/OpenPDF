@@ -776,6 +776,20 @@ public class PdfWriter extends DocWriter implements
         }
     }
 
+    private void checkObject(PdfObject object) {
+        if (!(object instanceof PdfDictionary))
+            return;
+	PdfDictionary dict = (PdfDictionary) object;
+	int type = dict.getPdfXObjectType();
+	if (type != -1)
+	{
+		if (convertColor != null && type == PdfXConformanceImp.PDFXKEY_CONTENT && object instanceof PRStream) {
+			PdfContentConvert convert = new PdfContentConvert(this, convertColor);
+			convert.filterStream((PRStream)object);
+		}
+            PdfXConformanceImp.checkPDFXConformance(this, type, object);
+	}
+    }
     /**
      * Use this method to add a PDF object to the PDF body.
      * Use this method only if you know what you're doing!
@@ -784,6 +798,7 @@ public class PdfWriter extends DocWriter implements
      * @throws IOException
      */
     public PdfIndirectObject addToBody(PdfObject object) throws IOException {
+	checkObject(object);
         PdfIndirectObject iobj = body.add(object);
         return iobj;
     }
@@ -797,6 +812,7 @@ public class PdfWriter extends DocWriter implements
      * @throws IOException
      */
     public PdfIndirectObject addToBody(PdfObject object, boolean inObjStm) throws IOException {
+	checkObject(object);
         PdfIndirectObject iobj = body.add(object, inObjStm);
         return iobj;
     }
@@ -810,6 +826,7 @@ public class PdfWriter extends DocWriter implements
      * @throws IOException
      */
     public PdfIndirectObject addToBody(PdfObject object, PdfIndirectReference ref) throws IOException {
+        checkObject(object);
         PdfIndirectObject iobj = body.add(object, ref);
         return iobj;
     }
@@ -824,6 +841,7 @@ public class PdfWriter extends DocWriter implements
      * @throws IOException
      */
     public PdfIndirectObject addToBody(PdfObject object, PdfIndirectReference ref, boolean inObjStm) throws IOException {
+        checkObject(object);
         PdfIndirectObject iobj = body.add(object, ref, inObjStm);
         return iobj;
     }
@@ -837,6 +855,7 @@ public class PdfWriter extends DocWriter implements
      * @throws IOException
      */
     public PdfIndirectObject addToBody(PdfObject object, int refNumber) throws IOException {
+        checkObject(object);
         PdfIndirectObject iobj = body.add(object, refNumber);
         return iobj;
     }
@@ -851,6 +870,7 @@ public class PdfWriter extends DocWriter implements
      * @throws IOException
      */
     public PdfIndirectObject addToBody(PdfObject object, int refNumber, boolean inObjStm) throws IOException {
+        checkObject(object);
         PdfIndirectObject iobj = body.add(object, refNumber, inObjStm);
         return iobj;
     }
@@ -1789,6 +1809,8 @@ public class PdfWriter extends DocWriter implements
         return pdfxConformance.isPdfX();
     }
 
+    ColorspaceConverter convertColor = null;
+	
 //  [C11] Output intents
     /**
      * Sets the values of the output intent dictionary. Null values are allowed to
@@ -1816,6 +1838,8 @@ public class PdfWriter extends DocWriter implements
         if (colorProfile != null) {
             PdfStream stream = new PdfICCBased(colorProfile, compressionLevel);
             out.put(PdfName.DESTOUTPUTPROFILE, addToBody(stream).getIndirectReference());
+	    if (pdfxConformance.isPdfX1A2001())
+		    convertColor = new ColorspaceConverter(colorProfile);
         }
 
         PdfName intentSubtype;

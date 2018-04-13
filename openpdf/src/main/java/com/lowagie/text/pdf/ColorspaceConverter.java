@@ -1,7 +1,7 @@
 /*
- * $Id: ExtendedColor.java 3373 2008-05-12 16:21:24Z xlv $
+ * $Id: PdfContentConverter.java 4065 2009-09-16 23:09:11Z psoares33 $
  *
- * Copyright 2001, 2002 by Paulo Soares.
+ * Copyright 1999, 2000, 2001, 2002 Bruno Lowagie
  *
  * The contents of this file are subject to the Mozilla Public License Version 1.1
  * (the "License"); you may not use this file except in compliance with the License.
@@ -49,80 +49,53 @@
 
 package com.lowagie.text.pdf;
 
-import java.awt.Color;
-/**
- *
- * @author  Paulo Soares (psoares@consiste.pt)
- */
-public abstract class ExtendedColor extends Color{
-    
-	private static final long serialVersionUID = 2722660170712380080L;
-	/** a type of extended color. */
-    public static final int TYPE_RGB = 0;
-    /** a type of extended color. */
-    public static final int TYPE_GRAY = 1;
-    /** a type of extended color. */
-    public static final int TYPE_CMYK = 2;
-    /** a type of extended color. */
-    public static final int TYPE_SEPARATION = 3;
-    /** a type of extended color. */
-    public static final int TYPE_PATTERN = 4;
-    /** a type of extended color. */
-    public static final int TYPE_SHADING = 5;
-    
-    protected int type;
+import java.awt.color.ColorSpace;
+import java.awt.color.ICC_ColorSpace;
+import java.awt.color.ICC_Profile;
 
-    /**
-     * Constructs an extended color of a certain type.
-     * @param type
-     */
-    public ExtendedColor(int type) {
-        super(0, 0, 0);
-        this.type = type;
-    }
-    
-    /**
-     * Constructs an extended color of a certain type and a certain color.
-     * @param type
-     * @param red
-     * @param green
-     * @param blue
-     */
-    public ExtendedColor(int type, float red, float green, float blue) {
-        super(normalize(red), normalize(green), normalize(blue));
-        this.type = type;
-    }
-    
-    /**
-     * Gets the type of this color.
-     * @return one of the types (see constants)
-     */
-    public int getType() {
-        return type;
-    }
-    
-    /**
-     * Gets the type of a given color.
-     * @param color
-     * @return one of the types (see constants)
-     */
-    public static int getType(Color color) {
-        if (color instanceof ExtendedColor)
-            return ((ExtendedColor)color).getType();
-        return TYPE_RGB;
-    }
+public class ColorspaceConverter
+{
+	private ColorSpace Output;
+	private ColorSpace RGB;
+	private ColorSpace CMYK;
+	private ColorSpace Gray;
 
-    static final float normalize(float value) {
-        if (value < 0)
-            return 0;
-        if (value > 1)
-            return 1;
-        return value;
-    }
+	public ColorspaceConverter(ICC_Profile output)
+	{
+		Output = new ICC_ColorSpace(output);
+		RGB = ColorSpace.getInstance(ColorSpace.CS_sRGB);
+		Gray = ColorSpace.getInstance(ColorSpace.CS_GRAY);
+		CMYK = Output;
+	}
 
-    static ExtendedColor getExtendedColor(Color color) {
-	    if (color instanceof ExtendedColor)
-		    return (ExtendedColor) color;
-	    return new RGBColor((float)(color.getRed()) / 0xFF, (float)(color.getGreen()) / 0xFF, (float)(color.getBlue()) / 0xFF);
-    }
+	ExtendedColor convert(ExtendedColor color)
+	{
+		switch(color.getType())
+		{
+		case ExtendedColor.TYPE_RGB:
+			{
+				float[] col = new float[3];
+				col[0] = ((RGBColor)color).getRedValue();
+				col[1] = ((RGBColor)color).getGreenValue();
+				col[2] = ((RGBColor)color).getBlueValue();
+				float[] ciexyz = RGB.toCIEXYZ(col);
+				float[] cmyk = Output.fromCIEXYZ(ciexyz);
+				return new CMYKColor(cmyk[0], cmyk[1], cmyk[2], cmyk[3]);
+			}
+
+		case ExtendedColor.TYPE_GRAY:
+			{
+				float[] col = new float[1];
+				col[0] = ((GrayColor)color).getGray();
+				float[] ciexyz = Gray.toCIEXYZ(col);
+				float[] cmyk = Output.fromCIEXYZ(ciexyz);
+				return new CMYKColor(cmyk[0], cmyk[1], cmyk[2], cmyk[3]);
+			}
+
+		case ExtendedColor.TYPE_CMYK:
+			return color;
+		default:
+			return color;
+		}
+	}
 }

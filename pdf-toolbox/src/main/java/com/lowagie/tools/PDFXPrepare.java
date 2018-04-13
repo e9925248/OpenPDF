@@ -257,6 +257,7 @@ public class PDFXPrepare {
 		write.setPDFXConformance(PDFType);
 		List bookmarks = new ArrayList();
 		doc.open();
+		write.setFullCompression();
 		write.setOutputIntents("Custom", null, null, iccName, icc);
 
 		List inputBookmarks = SimpleBookmark.getBookmark(read);

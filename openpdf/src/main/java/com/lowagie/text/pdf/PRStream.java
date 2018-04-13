@@ -237,4 +237,9 @@ public class PRStream extends PdfStream {
         }
         os.write(ENDSTREAM);
     }
+
+    public byte[] getContentBytes() throws IOException {
+        return PdfReader.getStreamBytes(this);
+    }
+
 }

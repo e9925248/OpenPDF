@@ -50,21 +50,33 @@
 package com.lowagie.text.pdf.internal;
 
 import java.awt.Color;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import com.lowagie.text.ExceptionConverter;
 import com.lowagie.text.error_messages.MessageLocalization;
 
 import com.lowagie.text.pdf.BaseFont;
+import com.lowagie.text.pdf.CMYKColor;
 import com.lowagie.text.pdf.ExtendedColor;
+import com.lowagie.text.pdf.GrayColor;
 import com.lowagie.text.pdf.PatternColor;
 import com.lowagie.text.pdf.PdfArray;
+import com.lowagie.text.pdf.PdfContentParser;
 import com.lowagie.text.pdf.PdfDictionary;
 import com.lowagie.text.pdf.PdfGState;
 import com.lowagie.text.pdf.PdfImage;
+import com.lowagie.text.pdf.PdfLiteral;
 import com.lowagie.text.pdf.PdfName;
 import com.lowagie.text.pdf.PdfNumber;
 import com.lowagie.text.pdf.PdfObject;
+import com.lowagie.text.pdf.PdfStream;
 import com.lowagie.text.pdf.PdfString;
 import com.lowagie.text.pdf.PdfWriter;
 import com.lowagie.text.pdf.PdfXConformanceException;
+import com.lowagie.text.pdf.PRTokeniser;
+import com.lowagie.text.pdf.RGBColor;
 import com.lowagie.text.pdf.ShadingColor;
 import com.lowagie.text.pdf.SpotColor;
 import com.lowagie.text.pdf.interfaces.PdfXConformance;
@@ -85,6 +97,8 @@ public class PdfXConformanceImp implements PdfXConformance {
     public static final int PDFXKEY_GSTATE = 6;
     /** A key for an aspect that can be checked for PDF/X Conformance. */
     public static final int PDFXKEY_LAYER = 7;
+    /** A key for an aspect that can be checked for PDF/X Conformance. */
+    public static final int PDFXKEY_CONTENT = 8;
     
     /**
      * The value indicating if the PDF has to be in conformance with PDF/X.
@@ -178,7 +192,405 @@ public class PdfXConformanceImp implements PdfXConformance {
             }
         }
     }
-    
+
+    static class PdfXContentChecker
+    {
+	PdfName strokeColorSpace = null;
+	PdfName fillColorSpace = null;
+	PdfWriter writer;
+	/** A map with all supported operators operators (PDF syntax). */
+	public Map<String, ContentOperator> operators;
+
+	    public interface ContentOperator {
+		    /**
+		     * Invokes a content operator.
+		     * 
+		     * @param operands
+		     *            the operands that come with the operator
+		     * @param resources
+		     *            TODO
+		     */
+		    void invoke(ArrayList<PdfObject> operands, PdfDictionary resources);
+
+		    /**
+		     * @return the name of the operator as it will be recognized in the pdf
+		     *         stream
+		     */
+		    String getOperatorName();
+		    
+	    }
+
+	    void checkColor(PdfWriter writer, PdfDictionary resources, ArrayList<Float> numbers, PdfName space) {
+		    ExtendedColor color = null;
+		    if (PdfName.DEVICERGB.equals(space))
+			    color = new RGBColor(numbers.get(0), numbers.get(1), numbers.get(2));
+		    else if (PdfName.DEVICEGRAY.equals(space))
+			    color = new GrayColor(numbers.get(0));
+		    else if (PdfName.DEVICECMYK.equals(space))
+			    color = new CMYKColor(numbers.get(0), numbers.get(1), numbers.get(2), numbers.get(3));
+		    checkPDFXConformance(writer, PDFXKEY_COLOR, color);
+	    }
+	    
+	/**
+	 * A content operator implementation (CS).
+	 */
+	class SetStrokeColorspace implements ContentOperator {
+		/**
+		 * @see com.lowagie.text.pdf.parser.ContentOperator#getOperatorName()
+		 */
+		@Override
+		public String getOperatorName() {
+			return "CS";
+		}
+
+		@Override
+		public void invoke(ArrayList<PdfObject> operands, PdfDictionary resources) {
+			PdfName colorSpace = (PdfName) operands.get(0);
+			strokeColorSpace = colorSpace;
+		}
+	}
+
+	/**
+	 * A content operator implementation (cs).
+	 */
+	class SetFillColorspace implements ContentOperator {
+		/**
+		 * @see com.lowagie.text.pdf.parser.ContentOperator#getOperatorName()
+		 */
+		@Override
+		public String getOperatorName() {
+			return "cs";
+		}
+
+		@Override
+		public void invoke(ArrayList<PdfObject> operands, PdfDictionary resources) {
+			PdfName colorSpace = (PdfName) operands.get(0);
+			fillColorSpace = colorSpace;
+		}
+	}
+
+	/**
+	 * A content operator implementation (sc).
+	 */
+	class SetFillColorPart implements ContentOperator {
+		/**
+		 * @see com.lowagie.text.pdf.parser.ContentOperator#getOperatorName()
+		 */
+		@Override
+		public String getOperatorName() {
+			return "sc";
+		}
+
+		@Override
+		public void invoke(ArrayList<PdfObject> operands, PdfDictionary resources) {
+			ArrayList<Float> nums = new ArrayList<Float>();
+			for(int i = 0; i < operands.size() - 1; i++)
+				nums.add(new Float(((PdfNumber)operands.get(i)).floatValue()));
+			checkColor(writer, resources, nums, fillColorSpace);
+		}
+	}
+
+	/**
+	 * A content operator implementation (SC).
+	 */
+	class SetStrokeColorPart implements ContentOperator {
+		/**
+		 * @see com.lowagie.text.pdf.parser.ContentOperator#getOperatorName()
+		 */
+		@Override
+		public String getOperatorName() {
+			return "SC";
+		}
+
+		@Override
+		public void invoke(ArrayList<PdfObject> operands, PdfDictionary resources) {
+			ArrayList<Float> nums = new ArrayList<Float>();
+			for(int i = 0; i < operands.size() - 1; i++)
+				nums.add(new Float(((PdfNumber)operands.get(i)).floatValue()));
+			checkColor(writer, resources, nums, strokeColorSpace);
+		}
+	}
+
+	/**
+	 * A content operator implementation (scn).
+	 */
+	class SetFillColor implements ContentOperator {
+		/**
+		 * @see com.lowagie.text.pdf.parser.ContentOperator#getOperatorName()
+		 */
+		@Override
+		public String getOperatorName() {
+			return "scn";
+		}
+
+		@Override
+		public void invoke(ArrayList<PdfObject> operands, PdfDictionary resources) {
+			ArrayList<Float> nums = new ArrayList<Float>();
+			for(int i = 0; i < operands.size() - 2; i++)
+				nums.add(new Float(((PdfNumber)operands.get(i)).floatValue()));
+			checkColor(writer, resources, nums, (PdfName)operands.get(operands.size() - 1));
+		}
+	}
+
+	/**
+	 * A content operator implementation (SCN).
+	 */
+	class SetStrokeColor implements ContentOperator {
+		/**
+		 * @see com.lowagie.text.pdf.parser.ContentOperator#getOperatorName()
+		 */
+		@Override
+		public String getOperatorName() {
+			return "SCN";
+		}
+
+		@Override
+		public void invoke(ArrayList<PdfObject> operands, PdfDictionary resources) {
+			ArrayList<Float> nums = new ArrayList<Float>();
+			for(int i = 0; i < operands.size() - 2; i++)
+				nums.add(new Float(((PdfNumber)operands.get(i)).floatValue()));
+			checkColor(writer, resources, nums, (PdfName)operands.get(operands.size() - 1));
+		}
+	}
+
+	/**
+	 * A content operator implementation (g).
+	 */
+	class SetFillColorCMYK implements ContentOperator {
+		/**
+		 * @see com.lowagie.text.pdf.parser.ContentOperator#getOperatorName()
+		 */
+		@Override
+		public String getOperatorName() {
+			return "g";
+		}
+
+		@Override
+		public void invoke(ArrayList<PdfObject> operands, PdfDictionary resources) {
+			PdfNumber g = (PdfNumber) operands.get(0);
+			GrayColor color = new GrayColor(g.floatValue());
+			checkPDFXConformance(writer, PDFXKEY_COLOR, color);
+		}
+	}
+
+	/**
+	 * A content operator implementation (G).
+	 */
+	class SetStrokeColorCMYK implements ContentOperator {
+		/**
+		 * @see com.lowagie.text.pdf.parser.ContentOperator#getOperatorName()
+		 */
+		@Override
+		public String getOperatorName() {
+			return "G";
+		}
+
+		@Override
+		public void invoke(ArrayList<PdfObject> operands, PdfDictionary resources) {
+			PdfNumber g = (PdfNumber) operands.get(0);
+			GrayColor color = new GrayColor(g.floatValue());
+			checkPDFXConformance(writer, PDFXKEY_COLOR, color);
+		}
+	}
+
+	/**
+	 * A content operator implementation (rg).
+	 */
+	class SetFillColorRGB implements ContentOperator {
+		/**
+		 * @see com.lowagie.text.pdf.parser.ContentOperator#getOperatorName()
+		 */
+		@Override
+		public String getOperatorName() {
+			return "rg";
+		}
+
+		@Override
+		public void invoke(ArrayList<PdfObject> operands, PdfDictionary resources) {
+			PdfNumber r = (PdfNumber) operands.get(0);
+			PdfNumber g = (PdfNumber) operands.get(1);
+			PdfNumber b = (PdfNumber) operands.get(2);
+			RGBColor color = new RGBColor(r.floatValue(), g.floatValue(), b.floatValue());
+			checkPDFXConformance(writer, PDFXKEY_COLOR, color);
+		}
+	}
+
+	/**
+	 * A content operator implementation (RG).
+	 */
+	class SetStrokeColorRGB implements ContentOperator {
+		/**
+		 * @see com.lowagie.text.pdf.parser.ContentOperator#getOperatorName()
+		 */
+		@Override
+		public String getOperatorName() {
+			return "RG";
+		}
+
+		@Override
+		public void invoke(ArrayList<PdfObject> operands, PdfDictionary resources) {
+			PdfNumber r = (PdfNumber) operands.get(0);
+			PdfNumber g = (PdfNumber) operands.get(1);
+			PdfNumber b = (PdfNumber) operands.get(2);
+			RGBColor color = new RGBColor(r.floatValue(), g.floatValue(), b.floatValue());
+			checkPDFXConformance(writer, PDFXKEY_COLOR, color);
+		}
+	}
+
+	/**
+	 * A content operator implementation (k).
+	 */
+	class SetFillColorGrey implements ContentOperator {
+		/**
+		 * @see com.lowagie.text.pdf.parser.ContentOperator#getOperatorName()
+		 */
+		@Override
+		public String getOperatorName() {
+			return "k";
+		}
+
+		@Override
+		public void invoke(ArrayList<PdfObject> operands, PdfDictionary resources) {
+			PdfNumber c = (PdfNumber) operands.get(0);
+			PdfNumber m = (PdfNumber) operands.get(1);
+			PdfNumber y = (PdfNumber) operands.get(2);
+			PdfNumber k = (PdfNumber) operands.get(3);
+			CMYKColor color = new CMYKColor(c.floatValue(), m.floatValue(), y.floatValue(), k.floatValue());
+			checkPDFXConformance(writer, PDFXKEY_COLOR, color);
+		}
+	}
+
+	/**
+	 * A content operator implementation (K).
+	 */
+	class SetStrokeColorGrey implements ContentOperator {
+		/**
+		 * @see com.lowagie.text.pdf.parser.ContentOperator#getOperatorName()
+		 */
+		@Override
+		public String getOperatorName() {
+			return "K";
+		}
+
+		@Override
+		public void invoke(ArrayList<PdfObject> operands, PdfDictionary resources) {
+			PdfNumber c = (PdfNumber) operands.get(0);
+			PdfNumber m = (PdfNumber) operands.get(1);
+			PdfNumber y = (PdfNumber) operands.get(2);
+			PdfNumber k = (PdfNumber) operands.get(3);
+			CMYKColor color = new CMYKColor(c.floatValue(), m.floatValue(), y.floatValue(), k.floatValue());
+			checkPDFXConformance(writer, PDFXKEY_COLOR, color);
+		}
+	}
+
+	/**
+	 * Registers a content operator that will be called when the specified
+	 * operator string is encountered during content processing. Each operator
+	 * may be registered only once (it is not legal to have multiple operators
+	 * with the same operatorString)
+	 * 
+	 * @param operator
+	 *            the operator that will receive notification when the operator
+	 *            is encountered
+	 * 
+	 * @since 2.1.7
+	 */
+	public void registerContentOperator(ContentOperator operator) {
+		String operatorString = operator.getOperatorName();
+		if (operators.containsKey(operatorString)) {
+			throw new IllegalArgumentException(
+					MessageLocalization.getComposedMessage(
+							"operator.1.already.registered", operatorString));
+		}
+		operators.put(operatorString, operator);
+	}
+
+    	/**
+	 * Get the operator to process a command with a given name
+	 * 
+	 * @param operatorName
+	 *            name of the operator that we might need to call
+	 * 
+	 * @return the operator or null if none present
+	 */
+	public ContentOperator lookupOperator(String operatorName) {
+		return operators.get(operatorName);
+	}
+
+	/**
+	 * Invokes an operator.
+	 * 
+	 * @param operator
+	 *            the PDF Syntax of the operator
+	 * @param operands
+	 *            a list with operands
+	 * @param resources
+	 *            Pdf Resources found in the file containing the stream.
+	 */
+	public void invokeOperator(PdfLiteral operator,
+			ArrayList<PdfObject> operands, PdfDictionary resources) {
+		String operatorName = operator.toString();
+		ContentOperator op = lookupOperator(operatorName);
+		if (op == null) {
+			// System.out.println("Skipping operator " + operator);
+			return;
+		}
+		// System.err.println(operator);
+		// System.err.println(operands);
+		op.invoke(operands, resources);
+	}
+
+	    PdfXContentChecker()
+	    {
+		    installDefaultOperators();
+	    }
+
+	/**
+	 * Loads all the supported graphics and text state operators in a map.
+	 */
+	protected void installDefaultOperators() {
+		operators = new HashMap<String, ContentOperator>();
+
+		registerContentOperator(new SetFillColorspace());
+		registerContentOperator(new SetStrokeColorspace());
+		registerContentOperator(new SetFillColorPart());
+		registerContentOperator(new SetStrokeColorPart());
+		//registerContentOperator(new SetFillColor());
+		//registerContentOperator(new SetStrokeColor());
+		registerContentOperator(new SetFillColorCMYK());
+		registerContentOperator(new SetStrokeColorCMYK());
+		registerContentOperator(new SetFillColorRGB());
+		registerContentOperator(new SetStrokeColorRGB());
+		registerContentOperator(new SetFillColorGrey());
+		registerContentOperator(new SetStrokeColorGrey());
+	}
+
+	    public void checkContent(byte[] data, PdfDictionary resources, PdfWriter writer) throws IOException {
+		    this.writer = writer;
+
+		    PdfContentParser ps = new PdfContentParser(new PRTokeniser(data));
+		    ArrayList<PdfObject> operands = new ArrayList<PdfObject>();
+		    while (ps.parse(operands).size() > 0) {
+			    PdfLiteral operator = (PdfLiteral) operands.get(operands.size() - 1);
+			    invokeOperator(operator, operands, resources);
+		    }
+	    }
+   }
+
+	private static void checkPDFContentStream(PdfStream content, PdfWriter writer) {
+        try {
+		byte[] data = content.getContentBytes();
+		PdfXContentChecker checker = new PdfXContentChecker();
+		PdfObject obj = content.get(PdfName.RESOURCES);
+		PdfDictionary resources = (PdfDictionary) obj;
+		checker.checkContent(data, resources, writer);
+	}
+	catch(IOException e)
+	{
+		throw new ExceptionConverter(e);
+	}
+    }
+
     /**
 	 * Business logic that checks if a certain object is in conformance with PDF/X.
      * @param writer	the writer that is supposed to write the PDF/X file
@@ -266,6 +678,8 @@ public class PdfXConformanceImp implements PdfXConformance {
                 break;
             case PDFXKEY_LAYER:
                 throw new PdfXConformanceException(MessageLocalization.getComposedMessage("layers.are.not.allowed"));
+            case PDFXKEY_CONTENT:
+		    checkPDFContentStream((PdfStream)obj1, writer);
         }
     }
 }

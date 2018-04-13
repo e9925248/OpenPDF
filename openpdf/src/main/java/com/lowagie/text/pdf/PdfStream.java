@@ -122,6 +122,7 @@ public class PdfStream extends PdfDictionary {
     protected int inputStreamLength = -1;
     protected PdfWriter writer;
     protected int rawLength;
+    protected byte[] origBytes = null;
         
     static final byte STARTSTREAM[] = DocWriter.getISOBytes("stream\n");
     static final byte ENDSTREAM[] = DocWriter.getISOBytes("\nendstream");
@@ -252,6 +253,7 @@ public class PdfStream extends PdfDictionary {
             deflater.end();
             // update the object
             streamBytes = stream;
+	    origBytes = bytes;
             bytes = null;
             put(PdfName.LENGTH, new PdfNumber(streamBytes.size()));
             if (filter == null) {
@@ -376,6 +378,12 @@ public class PdfStream extends PdfDictionary {
             os.write(bytes);
     }
     
+    public byte[] getContentBytes() throws IOException {
+        if (origBytes != null)
+            return origBytes;
+	return bytes;
+    }
+
     /**
      * @see com.lowagie.text.pdf.PdfObject#toString()
      */

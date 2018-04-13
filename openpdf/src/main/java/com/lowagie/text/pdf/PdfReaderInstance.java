@@ -53,6 +53,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import com.lowagie.text.error_messages.MessageLocalization;
+import com.lowagie.text.pdf.internal.PdfXConformanceImp;
 /**
  * Instance of PdfReader in each output document.
  *
@@ -150,6 +151,7 @@ class PdfReaderInstance {
             stream = new PRStream(reader, bout, compressionLevel);
             stream.putAll(dic);
         }
+	stream.setPdfXObjectType(PdfXConformanceImp.PDFXKEY_CONTENT);
         return stream;
     }
     

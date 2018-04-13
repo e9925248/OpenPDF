@@ -1,5 +1,5 @@
 /*
- * $Id: ExtendedColor.java 3373 2008-05-12 16:21:24Z xlv $
+ * $Id: RGBColor.java 3427 2008-05-24 18:32:31Z xlv $
  *
  * Copyright 2001, 2002 by Paulo Soares.
  *
@@ -49,80 +49,72 @@
 
 package com.lowagie.text.pdf;
 
-import java.awt.Color;
 /**
  *
  * @author  Paulo Soares (psoares@consiste.pt)
  */
-public abstract class ExtendedColor extends Color{
-    
-	private static final long serialVersionUID = 2722660170712380080L;
-	/** a type of extended color. */
-    public static final int TYPE_RGB = 0;
-    /** a type of extended color. */
-    public static final int TYPE_GRAY = 1;
-    /** a type of extended color. */
-    public static final int TYPE_CMYK = 2;
-    /** a type of extended color. */
-    public static final int TYPE_SEPARATION = 3;
-    /** a type of extended color. */
-    public static final int TYPE_PATTERN = 4;
-    /** a type of extended color. */
-    public static final int TYPE_SHADING = 5;
-    
-    protected int type;
+public class RGBColor extends ExtendedColor {
+
+    private static final long serialVersionUID = -1;
+	float red;
+    float green;
+    float blue;
 
     /**
-     * Constructs an extended color of a certain type.
-     * @param type
+     * Constructs a RGB Color based on 4 color values (values are integers from 0 to 255).
+     * @param intRed
+     * @param intGreen
+     * @param intBlue
+     * @param intBlack
      */
-    public ExtendedColor(int type) {
-        super(0, 0, 0);
-        this.type = type;
-    }
-    
-    /**
-     * Constructs an extended color of a certain type and a certain color.
-     * @param type
-     * @param red
-     * @param green
-     * @param blue
-     */
-    public ExtendedColor(int type, float red, float green, float blue) {
-        super(normalize(red), normalize(green), normalize(blue));
-        this.type = type;
-    }
-    
-    /**
-     * Gets the type of this color.
-     * @return one of the types (see constants)
-     */
-    public int getType() {
-        return type;
-    }
-    
-    /**
-     * Gets the type of a given color.
-     * @param color
-     * @return one of the types (see constants)
-     */
-    public static int getType(Color color) {
-        if (color instanceof ExtendedColor)
-            return ((ExtendedColor)color).getType();
-        return TYPE_RGB;
+    public RGBColor(int intRed, int intGreen, int intBlue) {
+        this(intRed / 255f, intGreen / 255f, intBlue / 255f);
     }
 
-    static final float normalize(float value) {
-        if (value < 0)
-            return 0;
-        if (value > 1)
-            return 1;
-        return value;
+    /**
+     * Construct a RGB Color.
+     * @param floatRed
+     * @param floatGreen
+     * @param floatBlue
+     * @param floatBlack
+     */
+    public RGBColor(float floatRed, float floatGreen, float floatBlue) {
+        super(TYPE_RGB, floatRed, floatGreen, floatBlue);
+        red = normalize(floatRed);
+        green = normalize(floatGreen);
+        blue = normalize(floatBlue);
+    }
+    
+    /**
+     * @return the red value
+     */
+    public float getRedValue() {
+        return red;
     }
 
-    static ExtendedColor getExtendedColor(Color color) {
-	    if (color instanceof ExtendedColor)
-		    return (ExtendedColor) color;
-	    return new RGBColor((float)(color.getRed()) / 0xFF, (float)(color.getGreen()) / 0xFF, (float)(color.getBlue()) / 0xFF);
+    /**
+     * @return the green value
+     */
+    public float getGreenValue() {
+        return green;
     }
+
+    /**
+     * @return the blue value
+     */
+    public float getBlueValue() {
+        return blue;
+    }
+
+    public boolean equals(Object obj) {
+        if (!(obj instanceof RGBColor))
+            return false;
+        RGBColor c2 = (RGBColor)obj;
+        return (red == c2.red && green == c2.green && blue == c2.blue);
+    }
+    
+    public int hashCode() {
+        return Float.floatToIntBits(red) ^ Float.floatToIntBits(green) ^ Float.floatToIntBits(blue); 
+    }
+    
 }

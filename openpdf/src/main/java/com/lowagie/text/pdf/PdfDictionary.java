@@ -102,6 +102,9 @@ public class PdfDictionary extends PdfObject {
     /** This is the type of this dictionary */
     private PdfName dictionaryType = null;
     
+    /** Object type for PDF/X checking */
+    private int pdfXObjectType = -1;
+
     /** This is the hashmap that contains all the values and keys of the dictionary */
     protected Map<PdfName, PdfObject> hashMap;
     
@@ -168,6 +171,24 @@ public class PdfDictionary extends PdfObject {
         return "Dictionary of type: " + get(PdfName.TYPE);
     }
     
+    /**
+     * sets PDF/X object type
+     *
+     * @param type PdfXConformanceImp.PDFXKEY_XXX
+     */
+    public void setPdfXObjectType(int type) {
+        pdfXObjectType = type;
+    }
+
+    /**
+     * return PDF/X object type
+     *
+     * @return return PdfXConformanceImp.PDFXKEY_XXX or -1
+     */
+    public int getPdfXObjectType() {
+        return pdfXObjectType;
+    }
+
     // DICTIONARY CONTENT METHODS
     
     /**
