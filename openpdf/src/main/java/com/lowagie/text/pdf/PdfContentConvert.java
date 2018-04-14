@@ -373,14 +373,14 @@ public class PdfContentConvert
 			PdfLiteral operator = (PdfLiteral) operands.get(operands.size() - 1);
 			invokeOperator(operator, operands, resources);
 		}
-		return content.getBuffer();
+		return content.toByteArray();
 	}
 
 	public void filterStream(PRStream stream) {
 		try {
 			byte[] data = stream.getContentBytes();
 			PdfObject obj = stream.get(PdfName.RESOURCES);
-			PdfDictionary resources = (PdfDictionary) obj;
+			PdfDictionary resources = (PdfDictionary) null;
 			stream.setData(filterContent(data, resources));
 		}
 		catch(IOException e) {

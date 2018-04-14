@@ -582,7 +582,7 @@ public class PdfXConformanceImp implements PdfXConformance {
 		byte[] data = content.getContentBytes();
 		PdfXContentChecker checker = new PdfXContentChecker();
 		PdfObject obj = content.get(PdfName.RESOURCES);
-		PdfDictionary resources = (PdfDictionary) obj;
+		PdfDictionary resources = (PdfDictionary) null;
 		checker.checkContent(data, resources, writer);
 	}
 	catch(IOException e)

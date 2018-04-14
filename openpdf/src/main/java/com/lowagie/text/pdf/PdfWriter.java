@@ -780,6 +780,8 @@ public class PdfWriter extends DocWriter implements
         if (!(object instanceof PdfDictionary))
             return;
 	PdfDictionary dict = (PdfDictionary) object;
+	if (PdfName.XOBJECT.equals(dict.get(PdfName.TYPE)) && PdfName.FORM.equals(dict.get(PdfName.SUBTYPE)))
+		dict.setPdfXObjectType(PdfXConformanceImp.PDFXKEY_CONTENT);
 	int type = dict.getPdfXObjectType();
 	if (type != -1)
 	{
