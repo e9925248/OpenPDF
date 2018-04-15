@@ -99,6 +99,8 @@ public class PDFXPrepare {
 			PDFType = PdfWriter.PDFX32002;
 		else if ("PDFX1A".equals(args[2]))
 			PDFType = PdfWriter.PDFX1A2001;
+		else if ("NONE".equals(args[2]))
+			PDFType = PdfWriter.PDFXNONE;
 		else
 			throw new IllegalArgumentException("Invalid PDF type " + args[2]);
 		try {
@@ -182,18 +184,30 @@ public class PDFXPrepare {
 		try {
 			if ("a6".equals(value))
 				value = "298ptx420pt";
+			if ("a6r".equals(value))
+				value = "420ptx298pt";
 			if ("a5".equals(value))
 				value = "420ptx595pt";
+			if ("a5r".equals(value))
+				value = "595ptx420pt";
 			if ("a4".equals(value))
 				value = "595ptx842pt";
+			if ("a4r".equals(value))
+				value = "842ptx595pt";
 			if ("a3".equals(value))
 				value = "842ptx1190pt";
 			if ("a2".equals(value))
 				value = "1190ptx1684pt";
+			if ("a2r".equals(value))
+				value = "1684ptx1190pt";
 			if ("a1".equals(value))
 				value = "1685ptx2384pt";
+			if ("a1r".equals(value))
+				value = "2384ptx1685pt";
 			if ("a0".equals(value))
 				value = "2384ptx3371pt";
+			if ("a0r".equals(value))
+				value = "3371ptx2384pt";
 			float w, h;
 			String[] parts = value.split("x");
 			if (parts.length != 2)
@@ -258,7 +272,8 @@ public class PDFXPrepare {
 		List bookmarks = new ArrayList();
 		doc.open();
 		write.setFullCompression();
-		write.setOutputIntents("Custom", null, null, iccName, icc);
+		if (PDFType != PdfWriter.PDFXNONE)
+			write.setOutputIntents("Custom", null, null, iccName, icc);
 
 		List inputBookmarks = SimpleBookmark.getBookmark(read);
 		if (inputBookmarks != null) {
