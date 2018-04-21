@@ -115,7 +115,7 @@ public class PDFXPrepare {
 
 	void usage() {
 		System.out
-				.println("Usage: input-pdf output-pdf PDFX1A|PDFX3 icc-profile page-size [bleed]");
+				.println("Usage: input-pdf output-pdf PDFX1A|PDFX3|NONE icc-profile page-size [bleed]");
 		System.out
 				.println("Converts the PDF for printing. It adds bleed and scales the document.");
 		throw new IllegalArgumentException("Incorrect parameters");
@@ -196,6 +196,8 @@ public class PDFXPrepare {
 				value = "842ptx595pt";
 			if ("a3".equals(value))
 				value = "842ptx1190pt";
+			if ("a3r".equals(value))
+				value = "1190ptx842pt";
 			if ("a2".equals(value))
 				value = "1190ptx1684pt";
 			if ("a2r".equals(value))
