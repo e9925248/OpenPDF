@@ -182,34 +182,38 @@ public class PDFXPrepare {
 
 	Rectangle parsePaperSize(String value) {
 		try {
+			if ("a7".equals(value))
+				value = "74mmx105mm";
+			if ("a7r".equals(value))
+				value = "105mmx74mm";
 			if ("a6".equals(value))
-				value = "298ptx420pt";
+				value = "105mmx148mm";
 			if ("a6r".equals(value))
-				value = "420ptx298pt";
+				value = "148mmx105mm";
 			if ("a5".equals(value))
-				value = "420ptx595pt";
+				value = "148mmx210mm";
 			if ("a5r".equals(value))
-				value = "595ptx420pt";
+				value = "210mmx148mm";
 			if ("a4".equals(value))
-				value = "595ptx842pt";
+				value = "210mmx297mm";
 			if ("a4r".equals(value))
-				value = "842ptx595pt";
+				value = "297mmx210mm";
 			if ("a3".equals(value))
-				value = "842ptx1190pt";
+				value = "297mmx420mm";
 			if ("a3r".equals(value))
-				value = "1190ptx842pt";
+				value = "420mmx297mm";
 			if ("a2".equals(value))
-				value = "1190ptx1684pt";
+				value = "420mmx594mm";
 			if ("a2r".equals(value))
-				value = "1684ptx1190pt";
+				value = "594mmx420mm";
 			if ("a1".equals(value))
-				value = "1685ptx2384pt";
+				value = "594mmx841mm";
 			if ("a1r".equals(value))
-				value = "2384ptx1685pt";
+				value = "841mmx594mm";
 			if ("a0".equals(value))
-				value = "2384ptx3371pt";
+				value = "841mmx1189mm";
 			if ("a0r".equals(value))
-				value = "3371ptx2384pt";
+				value = "1189mmx841mm";
 			float w, h;
 			String[] parts = value.split("x");
 			if (parts.length != 2)
@@ -346,44 +350,44 @@ public class PDFXPrepare {
 
 			if (Math.abs(paperSize.getLeft() - cropSize.getLeft()) > 1) {
 				content.moveTo(paperSize.getLeft(), cropSize.getBottom());
-				content.lineTo((paperSize.getLeft() + cropSize.getLeft()) / 2,
+				content.lineTo((3 * paperSize.getLeft() + cropSize.getLeft()) / 4,
 						cropSize.getBottom());
 				content.stroke();
 				content.moveTo(paperSize.getLeft(), cropSize.getTop());
-				content.lineTo((paperSize.getLeft() + cropSize.getLeft()) / 2,
+				content.lineTo((3 * paperSize.getLeft() + cropSize.getLeft()) / 4,
 						cropSize.getTop());
 				content.stroke();
 			}
 			if (Math.abs(paperSize.getRight() - cropSize.getRight()) > 1) {
 				content.moveTo(paperSize.getRight(), cropSize.getBottom());
 				content.lineTo(
-						(paperSize.getRight() + cropSize.getRight()) / 2,
+						(3 * paperSize.getRight() + cropSize.getRight()) / 4,
 						cropSize.getBottom());
 				content.stroke();
 				content.moveTo(paperSize.getRight(), cropSize.getTop());
 				content.lineTo(
-						(paperSize.getRight() + cropSize.getRight()) / 2,
+						(3 * paperSize.getRight() + cropSize.getRight()) / 4,
 						cropSize.getTop());
 				content.stroke();
 			}
 			if (Math.abs(paperSize.getTop() - cropSize.getTop()) > 1) {
 				content.moveTo(cropSize.getLeft(), paperSize.getTop());
 				content.lineTo(cropSize.getLeft(),
-						(paperSize.getTop() + cropSize.getTop()) / 2);
+						(3 * paperSize.getTop() + cropSize.getTop()) / 4);
 				content.stroke();
 				content.moveTo(cropSize.getRight(), paperSize.getTop());
 				content.lineTo(cropSize.getRight(),
-						(paperSize.getTop() + cropSize.getTop()) / 2);
+						(3 * paperSize.getTop() + cropSize.getTop()) / 4);
 				content.stroke();
 			}
 			if (Math.abs(paperSize.getBottom() - cropSize.getBottom()) > 1) {
 				content.moveTo(cropSize.getLeft(), paperSize.getBottom());
 				content.lineTo(cropSize.getLeft(),
-						(paperSize.getBottom() + cropSize.getBottom()) / 2);
+						(3 * paperSize.getBottom() + cropSize.getBottom()) / 4);
 				content.stroke();
 				content.moveTo(cropSize.getRight(), paperSize.getBottom());
 				content.lineTo(cropSize.getRight(),
-						(paperSize.getBottom() + cropSize.getBottom()) / 2);
+						(3 * paperSize.getBottom() + cropSize.getBottom()) / 4);
 				content.stroke();
 			}
 
