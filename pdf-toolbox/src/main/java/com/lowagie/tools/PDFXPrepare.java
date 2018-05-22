@@ -298,10 +298,10 @@ public class PDFXPrepare {
 			PdfImportedPage page = write.getImportedPage(read, pageNr);
 			Rectangle origPageSize = read.getPageSize(pageNr);
 			doc.setPageSize(paperSize);
+			doc.newPage();
 			write.setBoxSize("bleed", paperSize);
 			write.setBoxSize("crop", paperSize);
 			write.setBoxSize("trim", cropSize);
-			doc.newPage();
 
 			boolean rotate = false;
 			if ((getWidth(origPageSize) <= getHeight(origPageSize) && getWidth(pageSize) >= getHeight(pageSize))
